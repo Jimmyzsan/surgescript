@@ -5,8 +5,8 @@ $httpClient.get(url, (error, response, data) => {
         console.log("Error fetching word of the day:", error);
         $done({ title: "西语每日一词", content: "获取失败", style: "error" });
     } else {
-        const wordMatch = data.match(/<h1[^>]*>([^<]*)<\/h1>/);
-        const contentMatch = data.match(/<div class="word-header">([^<]*)<\/div>/);
+        const wordMatch = data.match(/<span class="hw">(.*?)<\/span>/);
+        const contentMatch = data.match(/<div class="quickdef[^>]*>(.*?)<\/div>/);
 
         if (wordMatch && contentMatch) {
             const word = wordMatch[1];
