@@ -1,38 +1,43 @@
-const url = 'https://www.spanishdict.com/wordoftheday';
+const url = "https://www.spanishdict.com/wordoftheday";
 
 $httpClient.get(url, (error, response, data) => {
   if (error) {
-    console.error('请求失败:', JSON.stringify(error));
-    $done({ error: '无法抓取每日一词' });
+    console.log("请求失败:", error);
+    $done({
+      title: "Error",
+      content: "无法获取每日单词",
+      icon: "exclamationmark.triangle",
+      "icon-color": "#FF0000"
+    });
     return;
   }
 
-  if (response.status !== 200) {
-    console.error('状态码异常:', response.status);
-    $done({ error: '状态码: ' + response.status });
-    return;
-  }
+  const wordMatch = data.match(/<h1[^>]*class=".*?dictionary-neodict-word-header.*?"[^>]*>(.*?)<\/h1>/);
+  const definitionMatch = data.match(/<p[^>]*class=".*?dictionary-neodict-brief-def.*?"[^>]*>(.*?)<\/p>/);
+  const exampleMatch = data.match(/<div[^>]*class="example"[^>]*>(.*?)<\/div>/s);
 
-  try {
-    const word = data.match(/<h1[^>]*data-qa="word"[^>]*>(.*?)<\/h1>/)?.[1]?.trim();
-    const meaning = data.match(/<p[^>]*data-qa="definition"[^>]*>(.*?)<\/p>/)?.[1]?.trim();
-    const example = data.match(/<p[^>]*data-qa="example"[^>]*>(.*?)<\/p>/)?.[1]?.trim();
+  if (wordMatch && definitionMatch) {
+    const wordOfTheDay = wordMatch[1].trim();
+    const definition = definitionMatch[1].trim();
+    const example = exampleMatch ? exampleMatch[1].replace(/<[^>]+>/g, '').trim() : "无可用例句";
 
-    if (word && meaning && example) {
-      const result = {
-        word: word,
-        meaning: meaning,
-        example: example
-      };
+    console.log(`每日单词: ${wordOfTheDay}`);
+    console.log(`定义: ${definition}`);
+    console.log(`例句: ${example}`);
 
-      console.log('每日一词抓取成功:', result);
-      $done({ body: JSON.stringify(result) });
-    } else {
-      console.error('未找到每日一词内容，页面结构可能已变更');
-      $done({ error: '页面结构变更，无法解析' });
-    }
-  } catch (err) {
-    console.error('解析错误:', err);
-    $done({ error: '解析页面时出现异常' });
+    $done({
+      title: `📚 每日单词: ${wordOfTheDay}`,
+      content: `📝 定义: ${definition}\n\n💬 例句: ${example}`,
+      icon: "text.book.closed",
+      "icon-color": "#5AC8FA"
+    });
+  } else {
+    console.log("未找到每日单词或定义");
+    $done({
+      title: "Error",
+      content: "未找到每日单词或定义",
+      icon: "exclamationmark.triangle",
+      "icon-color": "#FF0000"
+    });
   }
 });
