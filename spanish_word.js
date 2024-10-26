@@ -1,39 +1,38 @@
 const url = 'https://www.spanishdict.com/wordoftheday';
 
-// 使用 axios 进行请求
 $httpClient.get(url, (error, response, data) => {
   if (error) {
-    console.log('请求失败:', error);
+    console.error('请求失败:', JSON.stringify(error));
     $done({ error: '无法抓取每日一词' });
     return;
   }
 
   if (response.status !== 200) {
-    console.log('非200状态码:', response.status);
-    $done({ error: '请求失败，状态码：' + response.status });
+    console.error('状态码异常:', response.status);
+    $done({ error: '状态码: ' + response.status });
     return;
   }
 
   try {
-    const wordMatch = data.match(/<h1.*?data-qa="word">(.*?)<\/h1>/);
-    const meaningMatch = data.match(/<p.*?data-qa="definition">(.*?)<\/p>/);
-    const exampleMatch = data.match(/<p.*?data-qa="example">(.*?)<\/p>/);
+    const word = data.match(/<h1[^>]*data-qa="word"[^>]*>(.*?)<\/h1>/)?.[1]?.trim();
+    const meaning = data.match(/<p[^>]*data-qa="definition"[^>]*>(.*?)<\/p>/)?.[1]?.trim();
+    const example = data.match(/<p[^>]*data-qa="example"[^>]*>(.*?)<\/p>/)?.[1]?.trim();
 
-    if (wordMatch && meaningMatch && exampleMatch) {
+    if (word && meaning && example) {
       const result = {
-        word: wordMatch[1].trim(),
-        meaning: meaningMatch[1].trim(),
-        example: exampleMatch[1].trim()
+        word: word,
+        meaning: meaning,
+        example: example
       };
 
-      console.log('每日一词:', result);
+      console.log('每日一词抓取成功:', result);
       $done({ body: JSON.stringify(result) });
     } else {
-      console.log('解析失败：无法找到匹配内容');
-      $done({ error: '页面结构变化，未找到单词信息' });
+      console.error('未找到每日一词内容，页面结构可能已变更');
+      $done({ error: '页面结构变更，无法解析' });
     }
-  } catch (e) {
-    console.error('解析异常:', e);
-    $done({ error: '解析页面时出错' });
+  } catch (err) {
+    console.error('解析错误:', err);
+    $done({ error: '解析页面时出现异常' });
   }
 });
