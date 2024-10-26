@@ -1,43 +1,36 @@
+// ==Script==
+// @name 西语每日一词
+// @type panel
+// @cron 0 8 * * *
+// @panelTitle 西语每日一词
+// @panelContent 获取中...
+// ==/Script==
+
 const url = "https://www.spanishdict.com/wordoftheday";
 
-$httpClient.get(url, (error, response, data) => {
+// 发送 GET 请求以获取每日一词
+$httpClient.get(url, function (error, response, data) {
   if (error) {
-    console.log("请求失败:", error);
-    $done({
-      title: "Error",
-      content: "无法获取每日单词",
-      icon: "exclamationmark.triangle",
-      "icon-color": "#FF0000"
-    });
+    console.log("Error fetching word of the day:", error);
+    $done({ title: "西语每日一词", content: "获取失败，请检查网络连接。" });
     return;
   }
 
-  const wordMatch = data.match(/<h1[^>]*class=".*?dictionary-neodict-word-header.*?"[^>]*>(.*?)<\/h1>/);
-  const definitionMatch = data.match(/<p[^>]*class=".*?dictionary-neodict-brief-def.*?"[^>]*>(.*?)<\/p>/);
-  const exampleMatch = data.match(/<div[^>]*class="example"[^>]*>(.*?)<\/div>/s);
+  try {
+    // 提取每日单词和示例句
+    const wordMatch = data.match(/<h1[^>]*>(.*?)<\/h1>/);
+    const exampleMatch = data.match(/<div class="quote">(.*?)<\/div>/);
 
-  if (wordMatch && definitionMatch) {
-    const wordOfTheDay = wordMatch[1].trim();
-    const definition = definitionMatch[1].trim();
-    const example = exampleMatch ? exampleMatch[1].replace(/<[^>]+>/g, '').trim() : "无可用例句";
+    const word = wordMatch ? wordMatch[1] : "未找到单词";
+    const example = exampleMatch ? exampleMatch[1] : "未找到例句";
 
-    console.log(`每日单词: ${wordOfTheDay}`);
-    console.log(`定义: ${definition}`);
-    console.log(`例句: ${example}`);
-
+    // 打印到 Surge panel 中
     $done({
-      title: `📚 每日单词: ${wordOfTheDay}`,
-      content: `📝 定义: ${definition}\n\n💬 例句: ${example}`,
-      icon: "text.book.closed",
-      "icon-color": "#5AC8FA"
+      title: "西语每日一词",
+      content: `单词：${word}\n例句：${example}`,
     });
-  } else {
-    console.log("未找到每日单词或定义");
-    $done({
-      title: "Error",
-      content: "未找到每日单词或定义",
-      icon: "exclamationmark.triangle",
-      "icon-color": "#FF0000"
-    });
+  } catch (err) {
+    console.log("Error parsing response:", err);
+    $done({ title: "西语每日一词", content: "解析失败，请检查页面结构。" });
   }
 });
