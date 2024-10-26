@@ -8,26 +8,38 @@
 
 const url = "https://www.spanishdict.com/wordoftheday";
 
-$httpClient.get(url, (error, response, data) => {
-  if (error) {
-    console.log("Error fetching word of the day:", error);
-    $done({ title: "西语每日一词", content: "网络错误，请稍后再试。" });
-    return;
-  }
-
+(async () => {
   try {
-    const wordMatch = data.match(/<h1[^>]*>(.*?)<\/h1>/);
-    const exampleMatch = data.match(/<div class="quote">(.*?)<\/div>/);
+    let response = await fetch(url);
+    if (!response.ok) throw new Error("无法加载页面");
 
-    const word = wordMatch ? wordMatch[1].trim() : "未找到单词";
-    const example = exampleMatch ? exampleMatch[1].trim() : "未找到例句";
+    let html = await response.text();
+    let parser = new DOMParser();
+    let doc = parser.parseFromString(html, 'text/html');
 
+    // 获取每日单词、翻译和例句
+    let word = doc.querySelector('h1').innerText.trim(); // 今日的单词
+    let translation = doc.querySelector('h2').innerText.trim(); // 翻译
+    let exampleElement = doc.querySelector('.example-text'); // 例句部分
+
+    // 检查并提取例句（若存在）
+    let example = exampleElement ? exampleElement.innerText.trim() : "未找到例句";
+
+    // 将结果显示在 Surge 面板上
+    if (word && translation) {
+      $done({
+        title: "西语每日一词",
+        content: `${word} - ${translation}\n\n例句:\n${example}`,
+      });
+    } else {
+      throw new Error("未找到每日单词");
+    }
+  } catch (error) {
+    console.log(`Error fetching word of the day: ${error.message}`);
     $done({
       title: "西语每日一词",
-      content: `单词：${word}\n例句：${example}`,
+      content: "未找到内容",
     });
-  } catch (err) {
-    console.log("Parsing error:", err);
-    $done({ title: "西语每日一词", content: "解析失败，请检查页面结构。" });
   }
-});
+})();
+
